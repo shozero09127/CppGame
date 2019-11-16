@@ -51,6 +51,8 @@ bool HelloWorld::init()
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	width = visibleSize.width;
+	height = visibleSize.height;
 
     /////////////////////////////
     // 2. add a menu item with "X" image, which is clicked to quit the program
@@ -113,11 +115,67 @@ bool HelloWorld::init()
         sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
 
         // add the sprite as a child to this layer
-        this->addChild(sprite, 0);
+        //this->addChild(sprite, 0);
     }
+
+	
+		// OpenGLのエラーコードを受ける変数
+		GLenum error;
+	m_pProgram = new GLProgram;
+	// シェーダをテキストファイルから読みこんでコンパイル
+	m_pProgram->initWithFilenames("shaders/shader_0tex.vsh", "shaders/shader_0tex.fsh");
+	error = glGetError();
+	// attribute変数に属性インデックスを割り振る
+	m_pProgram->bindAttribLocation("a_position", GLProgram::VERTEX_ATTRIB_POSITION);
+	error = glGetError();
+	//attribute変数に属性indexを割り振る
+	m_pProgram->bindAttribLocation("a_color", GLProgram::VERTEX_ATTRIB_COLOR);
+	error = glGetError();
+	// シェーダプログラムをリンク
+	m_pProgram->link();
+	error = glGetError();
+	// uniform変数のリストを保存
+	m_pProgram->updateUniforms();
+	error = glGetError();
+	//Updateの有効
+	this->scheduleUpdate();
     return true;
 }
 
+void HelloWorld::draw(Renderer *renderer, const Mat4& transform, uint32_t flags)
+{
+	GLenum error;
+	// 指定したフラグに対応する属性インデックスだけを有効にして、他は無効にする
+	GL::enableVertexAttribs(GL::VERTEX_ATTRIB_FLAG_POSITION|GL::VERTEX_ATTRIB_FLAG_COLOR);
+	error = glGetError();
+	// シェーダーを有効化する
+	m_pProgram->use();
+	error = glGetError();
+	// 三角形の３頂点分の座標
+	Vec3 pos[4];
+	Vec3 color[4];
+	const float x = 0.5f;
+	const float y = 0.5f;
+	// 座標を１点ずつ設定
+	pos[0] = Vec3(-x, -y, 0);
+	pos[1] = Vec3(-x, y, 0);
+	pos[2] = Vec3(x, -y, 0);
+	pos[3] = Vec3(x, y, 0);
+	//カラーを1点ずつ設定
+	color[0] = Vec3(0, 0, 0);
+	color[1] = Vec3(1, 0, 0);
+	color[2] = Vec3(0, 1, 0);
+	color[3] = Vec3(0, 0, 1);
+	// 指定した属性インデックスに、データを関連付ける
+	glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, 0, pos);
+	// 指定した属性インデックスに、データを関連付ける
+	glVertexAttribPointer(GLProgram::VERTEX_ATTRIB_COLOR, 3, GL_FLOAT, GL_FALSE, 0, color);
+	error = glGetError();
+	// 3頂点分のデータで三角形を描画する
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	//glDrawArrays(GL_QUADS, 0, 4);//そもそも4点頂点の四角形は非推奨なので今後は頻出させない。
+	error = glGetError();
+}
 
 void HelloWorld::menuCloseCallback(Ref* pSender)
 {
@@ -131,3 +189,5 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
 
 
 }
+
+
